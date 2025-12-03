@@ -70,17 +70,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, 
            <div className="mb-12 flex flex-col items-center animate-fade-in-up">
               <div className="w-20 h-20 relative mb-6 text-white">
                  <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                    {/* Hexagon Border */}
-                    <path d="M50 5 L91 27 V73 L50 95 L9 73 V27 L50 5 Z" stroke="currentColor" strokeWidth="5" strokeLinejoin="round"/>
-                    {/* Bridge Structure */}
-                    <path d="M20 55 H80" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
-                    <path d="M25 55 L50 35 L75 55" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M50 35 V55" stroke="currentColor" strokeWidth="3" />
-                    <path d="M37.5 45 V55" stroke="currentColor" strokeWidth="2" />
-                    <path d="M62.5 45 V55" stroke="currentColor" strokeWidth="2" />
-                    {/* Water */}
-                    <path d="M35 70 H65" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
-                    <path d="M45 80 H55" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
+                    {/* Hexagon Frame */}
+                    <path d="M50 5 L92 28 V72 L50 95 L8 72 V28 L50 5 Z" stroke="currentColor" strokeWidth="6" strokeLinejoin="round"/>
+                    {/* Bridge Architecture */}
+                    <path d="M24 62 H76" stroke="currentColor" strokeWidth="5" strokeLinecap="round"/>
+                    <path d="M28 62 L50 35 L72 62" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M50 35 V62" stroke="currentColor" strokeWidth="4"/>
+                    {/* Water Reflection Lines */}
+                    <path d="M35 78 H65" stroke="currentColor" strokeWidth="3" strokeLinecap="round" opacity="0.6"/>
+                    <path d="M42 86 H58" stroke="currentColor" strokeWidth="3" strokeLinecap="round" opacity="0.4"/>
                 </svg>
               </div>
               <h1 className="text-3xl font-bold tracking-tight text-center">Talent Bridge</h1>

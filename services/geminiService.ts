@@ -136,3 +136,69 @@ export const processResumeUpdate = async (
     };
   }
 };
+
+// --- New Feature: Smart Apply / Cover Letter Generation ---
+
+const coverLetterSchema: Schema = {
+  type: Type.OBJECT,
+  properties: {
+    coverLetter: {
+      type: Type.STRING,
+      description: "A professional, concise cover letter (approx 200 words) tailored to the specific job and company, highlighting relevant skills from the resume."
+    }
+  },
+  required: ["coverLetter"]
+};
+
+export const generateCoverLetter = async (
+  jobTitle: string,
+  companyName: string,
+  resumeFileData: { data: string; mimeType: string }
+): Promise<string> => {
+  const prompt = `
+    You are a professional career coach.
+    
+    TASK:
+    Write a compelling, concise cover letter for the position of "${jobTitle}" at "${companyName}".
+    
+    SOURCE MATERIAL:
+    Use the attached resume to extract relevant skills, experience, and achievements that match this role.
+    
+    TONE:
+    Professional, enthusiastic, and confident. Keep it under 250 words.
+    
+    OUTPUT:
+    Return strictly JSON with the cover letter text.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: {
+        role: "user",
+        parts: [
+          { text: prompt },
+          {
+            inlineData: {
+              mimeType: resumeFileData.mimeType,
+              data: resumeFileData.data
+            }
+          }
+        ]
+      },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: coverLetterSchema,
+      }
+    });
+
+    if (response.text) {
+      const result = JSON.parse(response.text);
+      return result.coverLetter;
+    }
+    throw new Error("No response from AI");
+  } catch (error) {
+    console.error("Cover Letter Generation Error:", error);
+    return "Dear Hiring Manager,\n\nI am writing to express my interest in this position. Please find my resume attached.\n\nSincerely,\nCandidate";
+  }
+};

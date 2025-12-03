@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import { generateCoverLetter } from '../services/geminiService';
 
 interface OpportunitiesPageProps {
   major: string;
@@ -26,6 +27,13 @@ interface Peer {
 
 const OpportunitiesPage: React.FC<OpportunitiesPageProps> = ({ major, onBack }) => {
   const [activeTab, setActiveTab] = useState<'opportunities' | 'network'>('opportunities');
+  
+  // Smart Apply State
+  const [showSmartApplyModal, setShowSmartApplyModal] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<Opportunity | null>(null);
+  const [applyStep, setApplyStep] = useState<'upload' | 'generating' | 'review' | 'success'>('upload');
+  const [coverLetterText, setCoverLetterText] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const getOpportunities = (majorInput: string): Opportunity[] => {
     const m = majorInput.toLowerCase();
@@ -243,21 +251,113 @@ const OpportunitiesPage: React.FC<OpportunitiesPageProps> = ({ major, onBack }) 
   };
 
   const opportunities = getOpportunities(major);
+  const volunteerOpps = opportunities.filter(o => o.type === 'VOLUNTEER');
+  const internshipOpps = opportunities.filter(o => o.type === 'INTERNSHIP');
+  const fulltimeOpps = opportunities.filter(o => o.type === 'FULL-TIME');
+
   const network = getNetwork(major);
 
+  const startSmartApply = (job: Opportunity) => {
+    setSelectedJob(job);
+    setApplyStep('upload');
+    setShowSmartApplyModal(true);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0] && selectedJob) {
+      const file = e.target.files[0];
+      setApplyStep('generating');
+      
+      try {
+        // Convert to base64
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = async () => {
+          const result = reader.result as string;
+          const base64 = result.split(',')[1];
+          
+          const generatedLetter = await generateCoverLetter(
+            selectedJob.title,
+            selectedJob.company,
+            { data: base64, mimeType: file.type }
+          );
+          
+          setCoverLetterText(generatedLetter);
+          setApplyStep('review');
+        };
+      } catch (error) {
+        console.error("Error generating cover letter", error);
+        alert("Failed to generate cover letter. Please try again.");
+        setApplyStep('upload');
+      }
+    }
+  };
+
+  const handleApprove = () => {
+    setApplyStep('success');
+  };
+
+  const renderOpportunityCard = (opp: Opportunity) => (
+    <div key={opp.id} className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-all flex flex-col gap-4 h-full">
+        <div className="flex justify-between items-start">
+            <div className="h-12 w-12 bg-gray-50 rounded-lg flex items-center justify-center text-2xl border border-gray-100 shrink-0">
+                {opp.icon}
+            </div>
+            <div className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
+                opp.type === 'VOLUNTEER' ? 'bg-green-100 text-green-800' : 
+                opp.type === 'INTERNSHIP' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
+            }`}>
+                {opp.type}
+            </div>
+        </div>
+        
+        <div className="flex-1">
+            <h3 className="text-lg font-bold text-gray-900 leading-tight mb-1">{opp.title}</h3>
+            <div className="text-sm text-gray-600 font-medium mb-3">{opp.company}</div>
+            
+            <div className="flex flex-col gap-1 text-xs text-gray-500 font-medium uppercase tracking-wide">
+                <span className="flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    {opp.location}
+                </span>
+                <span className="flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    {opp.time}
+                </span>
+            </div>
+        </div>
+
+        <div className="flex flex-col gap-2 mt-auto">
+            <button className="w-full py-2 bg-white border border-black text-black font-bold text-xs tracking-widest hover:bg-black hover:text-white transition-all uppercase rounded">
+                {opp.type === 'VOLUNTEER' ? 'Volunteer' : 'Apply'}
+            </button>
+            <button 
+                onClick={() => startSmartApply(opp)}
+                className="w-full py-2 bg-[#DA7756] border border-[#DA7756] text-white font-bold text-xs tracking-widest hover:bg-[#c35e3d] hover:border-[#c35e3d] transition-all uppercase flex items-center justify-center gap-2 rounded shadow-sm"
+            >
+                <span>✨</span> Smart Apply
+            </button>
+        </div>
+    </div>
+  );
+
   return (
-    <div className="h-screen overflow-y-auto bg-[#F8F9FA] font-sans text-gray-900">
+    <div className="h-screen overflow-y-auto bg-[#F8F9FA] font-sans text-gray-900 relative">
       
       {/* Top Navbar */}
-      <nav className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="bg-white shadow-sm sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center cursor-pointer" onClick={onBack}>
               <div className="flex-shrink-0 flex items-center gap-2">
                  <div className="w-8 h-8 text-black">
                      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                        <path d="M50 5 L91 27 V73 L50 95 L9 73 V27 L50 5 Z" stroke="currentColor" strokeWidth="8" strokeLinejoin="round"/>
-                        <path d="M20 55 H80" stroke="currentColor" strokeWidth="6" strokeLinecap="round"/>
+                        <path d="M50 5 L92 28 V72 L50 95 L8 72 V28 L50 5 Z" stroke="currentColor" strokeWidth="6" strokeLinejoin="round"/>
+                        <path d="M24 62 H76" stroke="currentColor" strokeWidth="5" strokeLinecap="round"/>
+                        <path d="M28 62 L50 35 L72 62" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M50 35 V62" stroke="currentColor" strokeWidth="4"/>
+                        <path d="M35 78 H65" stroke="currentColor" strokeWidth="3" strokeLinecap="round" opacity="0.6"/>
+                        <path d="M42 86 H58" stroke="currentColor" strokeWidth="3" strokeLinecap="round" opacity="0.4"/>
                     </svg>
                  </div>
                  <span className="font-extrabold text-xl tracking-tight">TALENT BRIDGE</span>
@@ -287,12 +387,6 @@ const OpportunitiesPage: React.FC<OpportunitiesPageProps> = ({ major, onBack }) 
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
                     HOME
                 </button>
-                <button 
-                    onClick={onBack}
-                    className="md:hidden text-gray-500"
-                >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-                </button>
                 <div className="h-10 w-10 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs cursor-pointer hover:bg-gray-800 transition-colors">
                     ME
                 </div>
@@ -303,7 +397,7 @@ const OpportunitiesPage: React.FC<OpportunitiesPageProps> = ({ major, onBack }) 
 
       {/* Header Banner */}
       <div className="bg-black text-white py-12 px-6">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-7xl mx-auto">
               <h1 className="text-4xl md:text-5xl font-bold mb-4">Your Matches</h1>
               <p className="text-xl text-gray-300 font-light">
                   We identified your core strengths in <span className="text-white font-bold uppercase">{major}</span>.
@@ -315,53 +409,57 @@ const OpportunitiesPage: React.FC<OpportunitiesPageProps> = ({ major, onBack }) 
       </div>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 py-8">
         
         {/* Tab Content */}
         {activeTab === 'opportunities' && (
-            <div className="space-y-6">
-                {opportunities.map((opp) => (
-                    <div key={opp.id} className="bg-white rounded-lg p-6 md:p-8 shadow-sm border border-gray-100 flex flex-col md:flex-row gap-6 items-start md:items-center hover:shadow-md transition-shadow">
-                        <div className="h-20 w-20 flex-shrink-0 bg-gray-50 rounded-lg flex items-center justify-center text-4xl border border-gray-100">
-                            {opp.icon}
-                        </div>
-                        <div className="flex-1">
-                            <div className={`inline-block px-2 py-1 bg-white border border-black text-black text-[10px] font-bold uppercase tracking-wider mb-3 ${opp.type === 'VOLUNTEER' ? 'bg-green-50 border-green-600 text-green-800' : ''}`}>
-                                {opp.type}
-                            </div>
-                            <h3 className="text-2xl font-bold text-gray-900 mb-1 leading-tight">{opp.title}</h3>
-                            <div className="text-lg text-gray-600 font-medium mb-4">{opp.company}</div>
-                            
-                            <div className="flex flex-wrap gap-6 text-sm text-gray-500 font-medium uppercase tracking-wide">
-                                <span className="flex items-center gap-1">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                                    {opp.location}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                    {opp.time}
-                                </span>
-                            </div>
-                        </div>
-                        <div className="w-full md:w-auto mt-4 md:mt-0">
-                            <button className="w-full md:w-auto px-8 py-3 bg-white border-2 border-black text-black font-bold text-sm tracking-widest hover:bg-black hover:text-white transition-all duration-200 uppercase">
-                                {opp.type === 'VOLUNTEER' ? 'Volunteer' : 'Apply'}
-                            </button>
-                        </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Column 1: Volunteer */}
+                <div className="flex flex-col gap-6">
+                    <div className="flex items-center gap-3 pb-2 border-b border-gray-200">
+                        <span className="text-2xl">🤝</span>
+                        <h2 className="text-xl font-bold text-gray-900">Volunteer</h2>
+                        <span className="ml-auto bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-bold">{volunteerOpps.length}</span>
                     </div>
-                ))}
-                
-                {/* View More Button */}
-                <div className="text-center pt-8 pb-12">
-                   <button className="text-gray-500 font-bold tracking-widest text-sm hover:text-black transition-colors">
-                      LOAD MORE OPPORTUNITIES +
-                   </button>
+                    {volunteerOpps.length > 0 ? (
+                        volunteerOpps.map(renderOpportunityCard)
+                    ) : (
+                        <div className="text-gray-400 text-sm italic py-4">No volunteer opportunities found.</div>
+                    )}
+                </div>
+
+                {/* Column 2: Internships */}
+                <div className="flex flex-col gap-6">
+                    <div className="flex items-center gap-3 pb-2 border-b border-gray-200">
+                        <span className="text-2xl">💼</span>
+                        <h2 className="text-xl font-bold text-gray-900">Internships</h2>
+                        <span className="ml-auto bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-bold">{internshipOpps.length}</span>
+                    </div>
+                    {internshipOpps.length > 0 ? (
+                        internshipOpps.map(renderOpportunityCard)
+                    ) : (
+                         <div className="text-gray-400 text-sm italic py-4">No internships found.</div>
+                    )}
+                </div>
+
+                {/* Column 3: Full-Time */}
+                <div className="flex flex-col gap-6">
+                    <div className="flex items-center gap-3 pb-2 border-b border-gray-200">
+                        <span className="text-2xl">🚀</span>
+                        <h2 className="text-xl font-bold text-gray-900">Full-Time</h2>
+                        <span className="ml-auto bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-xs font-bold">{fulltimeOpps.length}</span>
+                    </div>
+                    {fulltimeOpps.length > 0 ? (
+                        fulltimeOpps.map(renderOpportunityCard)
+                    ) : (
+                         <div className="text-gray-400 text-sm italic py-4">No full-time jobs found.</div>
+                    )}
                 </div>
             </div>
         )}
 
         {activeTab === 'network' && (
-             <div className="grid md:grid-cols-2 gap-6">
+             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {network.map((peer) => (
                     <div key={peer.id} className="bg-white rounded-lg p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                         <div className="flex items-center gap-4 mb-4">
@@ -388,12 +486,136 @@ const OpportunitiesPage: React.FC<OpportunitiesPageProps> = ({ major, onBack }) 
 
       </main>
 
+      {/* Smart Apply Modal */}
+      {showSmartApplyModal && selectedJob && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowSmartApplyModal(false)}></div>
+              <div className="relative bg-white rounded-xl max-w-lg w-full p-8 shadow-2xl animate-fade-in-up">
+                  <button 
+                      onClick={() => setShowSmartApplyModal(false)}
+                      className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                  >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  </button>
+
+                  {/* Modal Header */}
+                  <div className="mb-6">
+                      <div className="text-[#DA7756] font-bold text-xs tracking-widest uppercase mb-1">Smart Apply</div>
+                      <h2 className="text-2xl font-bold text-gray-900">{selectedJob.title}</h2>
+                      <p className="text-gray-500">{selectedJob.company}</p>
+                  </div>
+
+                  {/* Step 1: Upload */}
+                  {applyStep === 'upload' && (
+                      <div className="text-center py-8">
+                          <div className="mb-6">
+                              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto text-3xl mb-4">
+                                  📄
+                              </div>
+                              <h3 className="text-lg font-bold mb-2">Upload your Resume</h3>
+                              <p className="text-gray-500 text-sm max-w-xs mx-auto">
+                                  We'll analyze your resume against the job description to draft a tailored cover letter.
+                              </p>
+                          </div>
+                          <input 
+                              type="file" 
+                              ref={fileInputRef}
+                              className="hidden" 
+                              accept="application/pdf,image/*"
+                              onChange={handleFileUpload}
+                          />
+                          <button 
+                              onClick={() => fileInputRef.current?.click()}
+                              className="w-full py-4 bg-black text-white font-bold rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+                          >
+                              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                              Select Resume (PDF)
+                          </button>
+                      </div>
+                  )}
+
+                  {/* Step 2: Generating */}
+                  {applyStep === 'generating' && (
+                      <div className="text-center py-12">
+                          <div className="inline-block mb-6">
+                              <svg className="animate-spin w-12 h-12 text-[#DA7756]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                          </div>
+                          <h3 className="text-lg font-bold text-gray-900 mb-2">Analyzing Profile...</h3>
+                          <p className="text-gray-500 text-sm">Drafting a personalized cover letter for {selectedJob.company}.</p>
+                      </div>
+                  )}
+
+                  {/* Step 3: Review */}
+                  {applyStep === 'review' && (
+                      <div>
+                          <label className="block text-sm font-bold text-gray-700 mb-2">Review Cover Letter</label>
+                          <textarea 
+                              value={coverLetterText}
+                              onChange={(e) => setCoverLetterText(e.target.value)}
+                              className="w-full h-64 p-4 bg-gray-50 border border-gray-200 rounded-lg text-sm leading-relaxed text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#DA7756] focus:border-transparent resize-none mb-6 font-serif"
+                          ></textarea>
+                          <div className="flex gap-4">
+                              <button 
+                                  onClick={() => setApplyStep('upload')}
+                                  className="flex-1 py-3 bg-white border border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition-colors"
+                              >
+                                  Cancel
+                              </button>
+                              <button 
+                                  onClick={handleApprove}
+                                  className="flex-1 py-3 bg-[#DA7756] text-white font-bold rounded-lg hover:bg-[#c35e3d] transition-colors shadow-lg shadow-orange-500/30"
+                              >
+                                  Approve & Apply
+                              </button>
+                          </div>
+                      </div>
+                  )}
+
+                  {/* Step 4: Success */}
+                  {applyStep === 'success' && (
+                      <div className="text-center py-8">
+                          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto text-4xl mb-6 text-green-600 animate-bounce">
+                              ✓
+                          </div>
+                          <h3 className="text-2xl font-bold text-gray-900 mb-2">Application Sent!</h3>
+                          <p className="text-gray-500 mb-8">
+                              Your application for <span className="font-bold text-gray-800">{selectedJob.title}</span> has been submitted successfully to {selectedJob.company}.
+                          </p>
+                          <button 
+                              onClick={() => setShowSmartApplyModal(false)}
+                              className="w-full py-4 bg-black text-white font-bold rounded-lg hover:bg-gray-800 transition-colors"
+                          >
+                              Close
+                          </button>
+                      </div>
+                  )}
+              </div>
+          </div>
+      )}
+
       {/* Floating Action Button for Mobile */}
       <div className="fixed bottom-6 right-6 md:hidden">
           <div className="bg-black text-white p-4 rounded-full shadow-lg">
              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
           </div>
       </div>
+      
+      <style>{`
+          .animate-fade-in-up {
+              animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+              opacity: 0;
+              transform: translateY(20px);
+          }
+          @keyframes fadeInUp {
+              to {
+                  opacity: 1;
+                  transform: translateY(0);
+              }
+          }
+      `}</style>
     </div>
   );
 };
