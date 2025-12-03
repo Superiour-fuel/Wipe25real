@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ChatInterface from './components/ChatInterface';
 import ResumePreview from './components/ResumePreview';
 import LandingPage from './components/LandingPage';
+import OpportunitiesPage from './components/OpportunitiesPage';
 import { ResumeData, ChatMessage } from './types';
 import { processResumeUpdate } from './services/geminiService';
 import { DEMO_RESUMES } from './data/demoResumes';
@@ -18,11 +19,14 @@ const INITIAL_RESUME: ResumeData = {
   skills: []
 };
 
+type ViewState = 'landing' | 'app' | 'opportunities';
+
 function App() {
-  const [showLanding, setShowLanding] = useState(true);
+  const [currentView, setCurrentView] = useState<ViewState>('landing');
   const [resumeData, setResumeData] = useState<ResumeData>(INITIAL_RESUME);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [userMajor, setUserMajor] = useState<string>("");
 
   // Helper to convert file to Base64
   const fileToBase64 = (file: File): Promise<string> => {
@@ -99,15 +103,30 @@ function App() {
         suggestions: ["Update contact info", "Rewrite summary", "Add a new skill"]
       }
     ]);
-    setShowLanding(false);
+    setCurrentView('app');
   };
 
-  if (showLanding) {
+  const handleOpenOpportunities = (major: string) => {
+    setUserMajor(major);
+    setCurrentView('opportunities');
+  };
+
+  if (currentView === 'landing') {
     return (
       <LandingPage 
-        onStart={() => setShowLanding(false)} 
+        onStart={() => setCurrentView('app')} 
         demos={DEMO_RESUMES}
         onLoadDemo={handleLoadDemo}
+        onOpenOpportunities={handleOpenOpportunities}
+      />
+    );
+  }
+
+  if (currentView === 'opportunities') {
+    return (
+      <OpportunitiesPage 
+        major={userMajor} 
+        onBack={() => setCurrentView('landing')} 
       />
     );
   }

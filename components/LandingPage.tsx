@@ -5,10 +5,13 @@ interface LandingPageProps {
   onStart: () => void;
   demos: ResumeData[];
   onLoadDemo: (demo: ResumeData) => void;
+  onOpenOpportunities: (major: string) => void;
 }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onStart, demos, onLoadDemo }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onStart, demos, onLoadDemo, onOpenOpportunities }) => {
   const [showDemos, setShowDemos] = useState(false);
+  const [showMajorModal, setShowMajorModal] = useState(false);
+  const [majorInput, setMajorInput] = useState("");
 
   const team = [
     { name: 'Rishel', link: 'https://www.linkedin.com/in/rishel-lijesh-7643a4377/' },
@@ -23,38 +26,40 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, demos, onLoadDemo })
     "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
   ];
 
+  const handleMajorSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (majorInput.trim()) {
+      onOpenOpportunities(majorInput);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#FDFBF7] text-[#3A5A40] font-sans selection:bg-[#A3B18A] selection:text-white flex flex-col overflow-y-auto relative">
+    <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#DA7756] selection:text-white flex flex-col relative overflow-x-hidden">
       
-      {/* Decorative Background Elements */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#DAD7CD] opacity-20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
-      <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-[#A3B18A] opacity-10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3 pointer-events-none"></div>
+      {/* Background Gradients & Noise */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-[#DA7756] opacity-[0.08] rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-900 opacity-[0.08] rounded-full blur-[120px]" />
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-soft-light"></div>
+      </div>
 
       {/* Navigation */}
-      <nav className="w-full flex justify-between items-center p-6 md:p-10 max-w-7xl mx-auto relative z-10">
-        <div className="flex items-center gap-3 font-bold text-2xl tracking-tighter cursor-pointer" onClick={onStart}>
-          <div className="w-12 h-12 relative drop-shadow-sm text-[#3A5A40]">
+      <nav className="w-full flex justify-between items-center p-6 md:p-8 max-w-7xl mx-auto relative z-20">
+        <div className="flex items-center gap-3 font-bold text-2xl tracking-tighter cursor-pointer group" onClick={onStart}>
+          <div className="w-10 h-10 relative text-white transition-transform group-hover:scale-110 duration-300">
               <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                {/* Hexagon Border */}
-                <path d="M50 5 L91 27 V73 L50 95 L9 73 V27 L50 5 Z" stroke="currentColor" strokeWidth="5" strokeLinejoin="round"/>
-                {/* Bridge Structure */}
+                <path d="M50 5 L91 27 V73 L50 95 L9 73 V27 L50 5 Z" stroke="currentColor" strokeWidth="6" strokeLinejoin="round"/>
                 <path d="M20 55 H80" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
                 <path d="M25 55 L50 35 L75 55" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M50 35 V55" stroke="currentColor" strokeWidth="3" />
-                <path d="M37.5 45 V55" stroke="currentColor" strokeWidth="2" />
-                <path d="M62.5 45 V55" stroke="currentColor" strokeWidth="2" />
-                {/* Water */}
-                <path d="M35 70 H65" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
-                <path d="M45 80 H55" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
               </svg>
           </div>
-          <span className="text-[#344E41]">Talent Bridge</span>
+          <span className="text-white tracking-tight">Talent Bridge</span>
         </div>
         <div className="flex gap-6 items-center">
-            <button onClick={onStart} className="hidden md:block text-[#588157] font-medium hover:text-[#3A5A40] transition-colors">How it works</button>
+            <button onClick={onStart} className="hidden md:block text-gray-400 font-medium hover:text-white transition-colors text-sm">How it works</button>
             <button 
             onClick={onStart} 
-            className="px-5 py-2.5 text-[#FDFBF7] bg-[#3A5A40] rounded-full font-semibold text-sm hover:bg-[#344E41] transition-all shadow-lg shadow-[#3A5A40]/20 hover:shadow-xl hover:scale-105"
+            className="px-6 py-2.5 bg-white text-black rounded-full font-bold text-sm hover:bg-gray-200 transition-all transform hover:scale-105"
             >
             Get Started
             </button>
@@ -62,128 +67,142 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, demos, onLoadDemo })
       </nav>
 
       {/* Hero Section */}
-      <main className="flex-1 flex flex-col lg:flex-row items-center justify-between px-6 md:px-12 max-w-7xl mx-auto w-full pt-8 pb-20 relative z-10 gap-12">
+      <main className="flex-1 flex flex-col lg:flex-row items-center justify-between px-6 md:px-12 max-w-7xl mx-auto w-full pt-10 pb-20 relative z-10 gap-16 lg:gap-24">
         
         {/* Left Content */}
         <div className="flex-1 text-center lg:text-left max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 border border-[#A3B18A] rounded-full text-xs font-bold tracking-widest text-[#588157] bg-white shadow-sm uppercase animate-fade-in-up">
-                <span className="w-2 h-2 rounded-full bg-[#588157] animate-pulse"></span>
-                AI-Powered Resume Architect
+            <div className="inline-flex items-center gap-2 px-3 py-1 mb-8 border border-gray-800 rounded-full text-[10px] font-bold tracking-widest text-[#DA7756] bg-gray-900/50 backdrop-blur-sm uppercase animate-fade-in-up">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#DA7756] animate-pulse"></span>
+                AI-Powered Architect v2.0
             </div>
             
-            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-[1.1] text-[#344E41]">
-            Cultivate your <br/>
-            career path <br/>
-            <span className="font-serif italic text-[#588157] relative inline-block">
-                organically.
-                <svg className="absolute -bottom-2 left-0 w-full h-3 text-[#A3B18A] opacity-50" viewBox="0 0 100 10" preserveAspectRatio="none">
-                    <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="3" fill="none" />
-                </svg>
-            </span>
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 leading-[1.1] text-white">
+            Architect your <br/>
+            professional <br/>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#DA7756] to-orange-200">identity.</span>
             </h1>
             
-            <p className="text-lg md:text-xl mb-10 text-[#588157] font-light leading-relaxed max-w-lg mx-auto lg:mx-0">
-            Stop wrestling with formatting. Chat with our intelligent architect to build a professional, ATS-friendly resume that stands out in the corporate landscape.
+            <p className="text-lg md:text-xl mb-10 text-gray-400 font-light leading-relaxed max-w-lg mx-auto lg:mx-0">
+            Stop struggling with templates. Our intelligent architect interviews you to build a precision-engineered, ATS-friendly resume in real-time.
             </p>
             
-            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 flex-wrap">
                 <button 
                 onClick={onStart}
-                className="w-full sm:w-auto px-8 py-4 text-lg font-bold text-[#FDFBF7] transition-all duration-200 bg-[#344E41] rounded-full hover:bg-[#283C32] hover:scale-105 focus:outline-none shadow-xl shadow-[#344E41]/30 flex items-center justify-center"
+                className="w-full sm:w-auto px-8 py-4 text-lg font-bold text-white transition-all duration-200 bg-[#DA7756] rounded-full hover:bg-[#b85c3f] hover:shadow-[0_0_20px_rgba(218,119,86,0.3)] focus:outline-none flex items-center justify-center"
                 >
-                <span>Build My Resume</span>
-                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                <span>Build Resume</span>
+                <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
                 </button>
+                
                 <button 
-                onClick={() => setShowDemos(true)}
-                className="w-full sm:w-auto px-8 py-4 text-lg font-bold text-[#344E41] transition-all duration-200 bg-white border border-[#A3B18A]/50 rounded-full hover:bg-[#FDFBF7] hover:border-[#344E41] flex items-center justify-center"
+                  onClick={() => setShowMajorModal(true)}
+                  className="w-full sm:w-auto px-8 py-4 text-lg font-bold text-white transition-all duration-200 bg-transparent border border-gray-700 rounded-full hover:bg-white hover:text-black hover:border-white flex items-center justify-center group"
                 >
-                View Examples
+                  <span>Explore Network</span>
                 </button>
             </div>
-
-             <div className="mt-10 flex items-center justify-center lg:justify-start gap-4 text-sm text-[#588157]">
-                <div className="flex -space-x-2">
-                    {[1,2,3,4].map(i => (
-                        <div key={i} className="w-8 h-8 rounded-full border-2 border-[#FDFBF7] bg-[#A3B18A] flex items-center justify-center text-[10px] text-white font-bold">
-                             {String.fromCharCode(64+i)}
-                        </div>
-                    ))}
-                </div>
-                <p>Trusted by 10,000+ job seekers</p>
+            
+            <div className="mt-8 flex justify-center lg:justify-start">
+               <button 
+                onClick={() => setShowDemos(true)}
+                className="text-sm text-gray-500 hover:text-white underline underline-offset-4 decoration-gray-700 hover:decoration-white transition-all"
+               >
+                 View example resumes
+               </button>
             </div>
         </div>
 
-        {/* Right Visual (Abstract Representation) */}
-        <div className="flex-1 relative w-full max-w-md lg:max-w-full flex justify-center lg:justify-end">
-            <div className="relative w-[320px] md:w-[400px] h-[450px]">
-                {/* Resume Paper */}
-                <div className="absolute top-0 right-0 w-[280px] md:w-[340px] h-[420px] bg-white rounded-xl shadow-2xl shadow-[#3A5A40]/10 border border-[#A3B18A]/20 p-6 rotate-3 hover:rotate-0 transition-transform duration-500 ease-out z-10 flex flex-col">
-                    <div className="flex flex-col items-center mb-6">
-                        <div className="w-16 h-16 bg-[#F3F4F6] rounded-full mb-3 flex items-center justify-center text-2xl">👤</div>
-                        <div className="h-5 bg-[#F3F4F6] rounded w-1/2 mb-2 flex items-center justify-center"><span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Alex Morgan</span></div>
-                        <div className="h-3 bg-[#F3F4F6] rounded w-1/3"></div>
+        {/* Right Visual (Tech/Modern) */}
+        <div className="flex-1 w-full max-w-md lg:max-w-xl relative flex justify-center lg:justify-end perspective-1000">
+             {/* Main Card */}
+             <div className="relative w-full aspect-[4/5] bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-2xl flex flex-col transform rotate-y-[-5deg] rotate-x-[5deg] hover:rotate-0 transition-transform duration-700 ease-out z-10 overflow-hidden">
+                {/* Header UI */}
+                <div className="flex items-center justify-between mb-8 border-b border-gray-800 pb-4">
+                    <div className="flex items-center gap-3">
+                         <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center">
+                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                         </div>
+                         <div>
+                            <div className="h-2 w-24 bg-gray-700 rounded mb-1.5"></div>
+                            <div className="h-2 w-16 bg-gray-800 rounded"></div>
+                         </div>
                     </div>
-                    
-                    <div className="space-y-4 flex-1">
+                    <div className="px-2 py-1 bg-[#DA7756]/10 border border-[#DA7756]/30 rounded text-[#DA7756] text-[10px] font-bold">
+                        ATS SCORE: 98
+                    </div>
+                </div>
+
+                {/* Content Skeleton */}
+                <div className="space-y-6 flex-1 opacity-60">
+                     <div className="space-y-2">
+                        <div className="h-2 bg-gray-700 rounded w-full"></div>
+                        <div className="h-2 bg-gray-800 rounded w-11/12"></div>
+                        <div className="h-2 bg-gray-800 rounded w-full"></div>
+                     </div>
+                     
+                     <div className="pt-2">
+                        <div className="flex justify-between mb-2">
+                            <div className="h-3 bg-gray-600 rounded w-1/3"></div>
+                            <div className="h-3 bg-gray-800 rounded w-1/5"></div>
+                        </div>
                         <div className="space-y-2">
-                             <div className="h-2 bg-[#F3F4F6] rounded w-full"></div>
-                             <div className="h-2 bg-[#F3F4F6] rounded w-full"></div>
-                             <div className="h-2 bg-[#F3F4F6] rounded w-5/6"></div>
+                            <div className="h-2 bg-gray-700 rounded w-full"></div>
+                            <div className="h-2 bg-gray-800 rounded w-10/12"></div>
                         </div>
-                         <div className="pt-2">
-                             <div className="flex justify-between mb-2">
-                                 <div className="h-3 bg-[#F3F4F6] rounded w-1/3"></div>
-                                 <div className="h-3 bg-[#F3F4F6] rounded w-1/5"></div>
-                             </div>
-                             <div className="space-y-2">
-                                <div className="h-2 bg-[#F3F4F6] rounded w-full"></div>
-                                <div className="h-2 bg-[#F3F4F6] rounded w-11/12"></div>
-                                <div className="h-2 bg-[#F3F4F6] rounded w-4/5"></div>
-                             </div>
+                     </div>
+                     
+                     <div className="pt-2">
+                        <div className="flex justify-between mb-2">
+                            <div className="h-3 bg-gray-600 rounded w-1/4"></div>
+                            <div className="h-3 bg-gray-800 rounded w-1/5"></div>
                         </div>
-                         <div className="pt-2">
-                             <div className="flex justify-between mb-2">
-                                 <div className="h-3 bg-[#F3F4F6] rounded w-1/3"></div>
-                                 <div className="h-3 bg-[#F3F4F6] rounded w-1/5"></div>
-                             </div>
-                             <div className="space-y-2">
-                                <div className="h-2 bg-[#F3F4F6] rounded w-full"></div>
-                                <div className="h-2 bg-[#F3F4F6] rounded w-10/12"></div>
-                             </div>
+                        <div className="space-y-2">
+                            <div className="h-2 bg-gray-700 rounded w-full"></div>
+                            <div className="h-2 bg-gray-800 rounded w-9/12"></div>
+                            <div className="h-2 bg-gray-800 rounded w-10/12"></div>
                         </div>
-                    </div>
+                     </div>
                 </div>
 
-                {/* Chat Bubble */}
-                <div className="absolute bottom-10 -left-4 md:-left-12 w-[260px] bg-[#344E41] rounded-2xl p-5 shadow-xl text-white z-20 animate-bounce-slow">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="w-8 h-8 rounded-full bg-[#A3B18A] flex items-center justify-center text-xs font-bold">AI</div>
-                        <div className="h-2 bg-[#A3B18A]/30 rounded w-20"></div>
-                    </div>
-                    <p className="text-sm font-light text-[#DAD7CD]">"I've optimized your summary for a Product Manager role. Shall we add your skills next?"</p>
-                </div>
+                {/* Scanline Effect */}
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#DA7756]/5 to-transparent h-[100%] w-full animate-scan pointer-events-none"></div>
+             </div>
 
-                {/* Decor elements */}
-                <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-tr from-[#A3B18A]/20 to-transparent rounded-full blur-2xl"></div>
-            </div>
+             {/* Floating Elements */}
+             <div className="absolute top-[20%] -left-[10%] bg-black border border-gray-800 p-4 rounded-xl shadow-xl z-20 animate-float">
+                <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <span className="text-xs font-mono text-gray-300">Optimizing Keywords...</span>
+                </div>
+             </div>
+             
+             <div className="absolute bottom-[20%] -right-[5%] bg-black border border-gray-800 p-4 rounded-xl shadow-xl z-20 animate-float-delayed">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded bg-[#DA7756] flex items-center justify-center text-white text-xs font-bold">AI</div>
+                    <div className="text-xs text-gray-300">
+                        <div className="font-bold text-white mb-0.5">Summary Updated</div>
+                        <div>+15% Impact Score</div>
+                    </div>
+                </div>
+             </div>
         </div>
 
       </main>
 
       {/* Feature Strip */}
-      <section className="w-full bg-white/50 backdrop-blur-sm border-y border-[#A3B18A]/10 py-16">
+      <section className="w-full bg-neutral-900/50 border-t border-white/5 py-16 backdrop-blur-sm z-10">
           <div className="max-w-7xl mx-auto px-6">
             <div className="grid md:grid-cols-3 gap-8">
                 {[
-                    { title: "Natural Conversation", desc: "Speak naturally. Our AI extracts achievements from your stories.", icon: "🌱" },
-                    { title: "Real-time Preview", desc: "See your document evolve instantly as you chat.", icon: "👁️" },
-                    { title: "ATS Optimized", desc: "Formats that pass the bots and impress the humans.", icon: "🎯" }
+                    { title: "Smart Extraction", desc: "Our AI extracts achievements from your casual conversation.", icon: "⚡" },
+                    { title: "Real-time Architecture", desc: "Watch your document structure evolve instantly as you speak.", icon: "🏗️" },
+                    { title: "ATS Precision", desc: "Formats engineered to pass bots and impress recruiters.", icon: "🎯" }
                 ].map((feature, idx) => (
-                    <div key={idx} className="group p-6 rounded-2xl hover:bg-white hover:shadow-lg transition-all duration-300 border border-transparent hover:border-[#A3B18A]/20">
-                        <div className="text-3xl mb-4 group-hover:scale-110 transition-transform duration-300">{feature.icon}</div>
-                        <h3 className="text-xl font-bold text-[#344E41] mb-2">{feature.title}</h3>
-                        <p className="text-[#588157] text-sm leading-relaxed">{feature.desc}</p>
+                    <div key={idx} className="group p-6 rounded-2xl bg-black border border-white/10 hover:border-[#DA7756]/50 transition-all duration-300">
+                        <div className="text-3xl mb-4 group-hover:scale-110 transition-transform duration-300 grayscale group-hover:grayscale-0">{feature.icon}</div>
+                        <h3 className="text-xl font-bold text-white mb-2">{feature.title}</h3>
+                        <p className="text-gray-400 text-sm leading-relaxed">{feature.desc}</p>
                     </div>
                 ))}
             </div>
@@ -191,7 +210,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, demos, onLoadDemo })
       </section>
 
       {/* Footer */}
-      <footer className="w-full py-8 text-center text-[#588157] text-sm bg-[#FDFBF7] border-t border-[#A3B18A]/10">
+      <footer className="w-full py-8 text-center text-gray-500 text-sm bg-black border-t border-white/5 z-10">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="opacity-70">© {new Date().getFullYear()} Talent Bridge.</p>
           <div className="flex gap-6 items-center flex-wrap justify-center">
@@ -201,7 +220,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, demos, onLoadDemo })
                 href={member.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-[#344E41] hover:underline underline-offset-4 transition-colors font-medium"
+                className="hover:text-[#DA7756] transition-colors"
               >
                 {member.name}
               </a>
@@ -213,60 +232,98 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, demos, onLoadDemo })
       {/* Demo Modal */}
       {showDemos && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-[#344E41]/80 backdrop-blur-sm" onClick={() => setShowDemos(false)}></div>
-          <div className="relative bg-white rounded-3xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowDemos(false)}></div>
+          <div className="relative bg-[#0A0A0A] border border-gray-800 rounded-3xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-[#344E41]">Select a Template</h2>
+              <h2 className="text-3xl font-bold text-white">Select a Template</h2>
               <button 
                 onClick={() => setShowDemos(false)}
-                className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors"
+                className="p-2 rounded-full hover:bg-gray-800 text-gray-500 transition-colors"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
             
-            <p className="text-[#588157] mb-8 max-w-2xl">
-              Choose an example resume to start with. You can then use the chat interface to customize details, rewrite summaries, or completely overhaul the experience sections to match your own.
+            <p className="text-gray-400 mb-8 max-w-2xl">
+              Choose an example resume to start with. Customize details using our AI architect.
             </p>
 
             <div className="grid md:grid-cols-3 gap-6">
               {demos.map((demo, idx) => (
                 <div 
                   key={idx} 
-                  className="border border-[#A3B18A]/30 rounded-xl p-6 hover:shadow-xl hover:border-[#344E41] hover:-translate-y-1 transition-all duration-300 bg-[#FDFBF7] flex flex-col h-full"
+                  className="border border-gray-800 bg-[#111] rounded-xl p-6 hover:shadow-xl hover:border-[#DA7756] hover:-translate-y-1 transition-all duration-300 flex flex-col h-full group"
                 >
                   <img
                     src={profileImages[idx % profileImages.length]}
                     alt={demo.fullName}
-                    className="w-16 h-16 rounded-full object-cover mb-4 border-2 border-white shadow-md"
+                    className="w-16 h-16 rounded-full object-cover mb-4 border-2 border-gray-700 group-hover:border-[#DA7756] transition-colors"
                   />
-                  <h3 className="text-xl font-bold text-[#344E41] mb-1">{demo.fullName}</h3>
-                  <p className="text-sm font-semibold text-[#588157] uppercase tracking-wider mb-4">{demo.title}</p>
+                  <h3 className="text-xl font-bold text-white mb-1">{demo.fullName}</h3>
+                  <p className="text-xs font-bold text-[#DA7756] uppercase tracking-wider mb-4">{demo.title}</p>
                   
                   <div className="space-y-2 mb-6 flex-1">
-                    <p className="text-sm text-gray-600 line-clamp-3 italic">"{demo.summary}"</p>
+                    <p className="text-sm text-gray-400 line-clamp-3 italic">"{demo.summary}"</p>
                     <div className="flex flex-wrap gap-1 mt-3">
                       {demo.skills.slice(0, 3).map((s, i) => (
-                        <span key={i} className="text-[10px] bg-white border border-[#A3B18A]/20 px-2 py-1 rounded-md text-[#588157]">
+                        <span key={i} className="text-[10px] bg-gray-800 border border-gray-700 px-2 py-1 rounded text-gray-300">
                           {s}
                         </span>
                       ))}
-                      {demo.skills.length > 3 && (
-                        <span className="text-[10px] px-2 py-1 text-[#588157]">+ {demo.skills.length - 3} more</span>
-                      )}
                     </div>
                   </div>
 
                   <button
                     onClick={() => onLoadDemo(demo)}
-                    className="w-full py-3 bg-[#344E41] text-white rounded-lg font-semibold hover:bg-[#283C32] transition-colors flex items-center justify-center gap-2"
+                    className="w-full py-3 bg-white text-black rounded-lg font-bold hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
                   >
                     <span>Edit this Resume</span>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                   </button>
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Major Selection Modal */}
+      {showMajorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => setShowMajorModal(false)}></div>
+          <div className="relative bg-[#0A0A0A] border border-gray-800 rounded-3xl p-8 max-w-lg w-full shadow-2xl">
+             <div className="text-center">
+               <div className="w-16 h-16 bg-[#DA7756]/10 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">
+                 🎓
+               </div>
+               <h2 className="text-2xl font-bold text-white mb-2">What is your Major?</h2>
+               <p className="text-gray-400 mb-6">
+                 Tell us what you are studying to unlock tailored career paths and network connections.
+               </p>
+               
+               <form onSubmit={handleMajorSubmit}>
+                 <input 
+                   type="text" 
+                   value={majorInput}
+                   onChange={(e) => setMajorInput(e.target.value)}
+                   placeholder="e.g. Computer Science, Marketing..."
+                   className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-xl focus:outline-none focus:border-[#DA7756] focus:ring-1 focus:ring-[#DA7756] mb-6 text-white placeholder-gray-600"
+                   autoFocus
+                 />
+                 <button 
+                   type="submit"
+                   className="w-full py-3 bg-[#DA7756] text-white rounded-xl font-bold hover:bg-[#b85c3f] transition-colors"
+                 >
+                   Explore Opportunities
+                 </button>
+               </form>
+               
+               <button 
+                 onClick={() => setShowMajorModal(false)}
+                 className="mt-4 text-sm text-gray-500 hover:text-white"
+               >
+                 Cancel
+               </button>
+             </div>
           </div>
         </div>
       )}
@@ -279,12 +336,25 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, demos, onLoadDemo })
         .animate-fade-in-up {
             animation: fade-in-up 0.8s ease-out forwards;
         }
-        @keyframes bounce-slow {
+        @keyframes float {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-10px); }
         }
-        .animate-bounce-slow {
-            animation: bounce-slow 4s ease-in-out infinite;
+        .animate-float {
+            animation: float 4s ease-in-out infinite;
+        }
+        .animate-float-delayed {
+            animation: float 4s ease-in-out infinite 2s;
+        }
+        @keyframes scan {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+        .animate-scan {
+            animation: scan 4s linear infinite;
+        }
+        .perspective-1000 {
+            perspective: 1000px;
         }
       `}</style>
     </div>

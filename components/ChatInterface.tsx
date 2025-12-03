@@ -250,7 +250,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, 
         
         <form 
           onSubmit={handleSubmit} 
-          className="relative bg-[#1E1E1E] rounded-2xl border border-gray-800 focus-within:border-gray-600 transition-colors"
+          className="relative bg-white rounded-2xl border border-gray-200 focus-within:border-gray-400 transition-colors"
         >
           <input
             type="file"
@@ -263,7 +263,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, 
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+            className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
             title="Upload context or image"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
@@ -276,7 +276,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, 
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Type your reply..."
-            className="w-full bg-transparent text-white placeholder-gray-500 px-14 py-4 focus:outline-none"
+            className="w-full bg-transparent text-gray-900 placeholder-gray-500 px-14 py-4 focus:outline-none"
             disabled={isProcessing}
           />
 
@@ -285,8 +285,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, 
             disabled={(!inputText && !selectedFile) || isProcessing}
             className={`absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all ${
               (!inputText && !selectedFile) || isProcessing
-                ? 'bg-gray-700 text-gray-500 cursor-not-allowed' 
-                : 'bg-white text-black hover:bg-gray-200'
+                ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                : 'bg-black text-white hover:bg-gray-800'
             }`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
