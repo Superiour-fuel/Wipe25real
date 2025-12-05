@@ -10,36 +10,36 @@ const resumeSchema: Schema = {
   properties: {
     chatResponse: {
       type: Type.STRING,
-      description: "A conversational response. If parsing a resume, say 'I've analyzed your resume. Here is the preview. What would you like to improve?'. If building, ask for the next missing piece of information.",
+      description: "A short, encouraging response confirming the action taken (e.g., 'I've parsed your resume. Please verify the details.').",
     },
     suggestions: {
       type: Type.ARRAY,
       items: { type: Type.STRING },
-      description: "List of 3-4 short, actionable text suggestions.",
+      description: "List of 3-4 short actionable next steps.",
     },
     updatedResume: {
       type: Type.OBJECT,
       description: "The complete updated resume data structure.",
       properties: {
         fullName: { type: Type.STRING },
-        title: { type: Type.STRING, description: "Professional job title" },
+        title: { type: Type.STRING },
         email: { type: Type.STRING },
         phone: { type: Type.STRING },
         location: { type: Type.STRING },
-        summary: { type: Type.STRING, description: "A professional summary (2-3 sentences)" },
+        summary: { type: Type.STRING },
+        themeColor: { type: Type.STRING },
         experience: {
           type: Type.ARRAY,
           items: {
             type: Type.OBJECT,
             properties: {
-              id: { type: Type.STRING, description: "Unique ID (can be generated)" },
+              id: { type: Type.STRING },
               title: { type: Type.STRING },
               company: { type: Type.STRING },
               dates: { type: Type.STRING },
               description: {
                 type: Type.ARRAY,
-                items: { type: Type.STRING },
-                description: "List of bullet points for achievements/responsibilities"
+                items: { type: Type.STRING }
               }
             }
           }
@@ -57,6 +57,19 @@ const resumeSchema: Schema = {
             }
           }
         },
+        projects: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              id: { type: Type.STRING },
+              name: { type: Type.STRING },
+              description: { type: Type.STRING },
+              technologies: { type: Type.ARRAY, items: { type: Type.STRING } },
+              link: { type: Type.STRING },
+            }
+          }
+        },
         skills: {
           type: Type.ARRAY,
           items: { type: Type.STRING }
@@ -68,6 +81,14 @@ const resumeSchema: Schema = {
   required: ["chatResponse", "updatedResume", "suggestions"]
 };
 
+// Timeout wrapper for API calls
+const withTimeout = <T>(promise: Promise<T>, ms: number = 60000): Promise<T> => {
+    return Promise.race([
+        promise,
+        new Promise<T>((_, reject) => setTimeout(() => reject(new Error("Request timed out")), ms))
+    ]);
+};
+
 export const processResumeUpdate = async (
   currentResume: ResumeData,
   userMessage: string,
@@ -76,30 +97,19 @@ export const processResumeUpdate = async (
   
   const isParsing = !!fileData && (!currentResume.fullName || currentResume.fullName === "");
 
-  const prompt = `
-    You are an expert Resume Architect AI.
-    
-    TASK:
-    ${isParsing 
-      ? "The user has uploaded an existing resume. EXTRACT all information from the provided document accurately into the JSON structure. Polish the summary and experience bullet points to be more professional and action-oriented immediately."
-      : "You are interviewing the user to build their resume. Analyze their input and update the JSON structure."}
+  // Build prompt instructions
+  const promptText = isParsing 
+    ? `TASK: EXTRACT info from the attached resume document into the JSON structure. 
+       - Do NOT hallucinate. Map fields exactly.
+       - If a field is missing, leave it empty or use a reasonable default.
+       - Polish the summary slightly to be professional.`
+    : `TASK: Update the resume JSON based on user input: "${userMessage}".
+       - Improve phrasing to be professional (Action Verb + Result).
+       - Maintain existing data unless instructed to change.`;
 
-    CURRENT RESUME STATE:
-    ${JSON.stringify(currentResume)}
+  const parts: any[] = [];
 
-    USER INPUT:
-    "${userMessage}"
-
-    INSTRUCTIONS:
-    1. Update the 'updatedResume' object.
-    2. If extracting from a file, ensure no data is lost. Map fields intelligently.
-    3. Improve phrasing to be professional (Action Verb + Task + Result).
-    4. Generate a helpful 'chatResponse'.
-    5. Provide 'suggestions' for next steps.
-  `;
-
-  const parts: any[] = [{ text: prompt }];
-  
+  // Important: Add file data FIRST for better context parsing
   if (fileData) {
     parts.push({
       inlineData: {
@@ -109,8 +119,19 @@ export const processResumeUpdate = async (
     });
   }
 
+  // Add text prompt second
+  parts.push({ 
+      text: `
+      You are Brio AI, a Resume Architect.
+      ${promptText}
+      
+      CURRENT JSON STATE:
+      ${JSON.stringify(currentResume)}
+      ` 
+  });
+
   try {
-    const response = await ai.models.generateContent({
+    const response = await withTimeout(ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: {
         role: "user",
@@ -119,20 +140,22 @@ export const processResumeUpdate = async (
       config: {
         responseMimeType: "application/json",
         responseSchema: resumeSchema,
+        // Add thinking budget to help with complex PDF extraction
+        thinkingConfig: { thinkingBudget: 2048 }
       }
-    });
+    }), 45000); // 45s timeout
 
     if (response.text) {
       return JSON.parse(response.text);
     }
-    throw new Error("No response from AI");
+    throw new Error("No response text from AI");
 
   } catch (error) {
     console.error("Gemini API Error:", error);
     return {
-      chatResponse: "I'm having trouble analyzing that right now. Please try again.",
+      chatResponse: "I encountered an issue processing that file (it might be too large or complex). Please try pasting the text content instead.",
       updatedResume: currentResume,
-      suggestions: ["Try Again"]
+      suggestions: ["Try converting to text", "Upload a smaller file"]
     };
   }
 };
@@ -144,7 +167,7 @@ const coverLetterSchema: Schema = {
   properties: {
     coverLetter: {
       type: Type.STRING,
-      description: "A professional, concise cover letter (approx 200 words) tailored to the specific job and company, highlighting relevant skills from the resume."
+      description: "A professional cover letter."
     }
   },
   required: ["coverLetter"]
@@ -155,35 +178,19 @@ export const generateCoverLetter = async (
   companyName: string,
   resumeFileData: { data: string; mimeType: string }
 ): Promise<string> => {
-  const prompt = `
-    You are a professional career coach.
-    
-    TASK:
-    Write a compelling, concise cover letter for the position of "${jobTitle}" at "${companyName}".
-    
-    SOURCE MATERIAL:
-    Use the attached resume to extract relevant skills, experience, and achievements that match this role.
-    
-    TONE:
-    Professional, enthusiastic, and confident. Keep it under 250 words.
-    
-    OUTPUT:
-    Return strictly JSON with the cover letter text.
-  `;
-
   try {
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: {
         role: "user",
         parts: [
-          { text: prompt },
           {
             inlineData: {
               mimeType: resumeFileData.mimeType,
               data: resumeFileData.data
             }
-          }
+          },
+          { text: `Write a 200-word cover letter for ${jobTitle} at ${companyName} using this resume.` }
         ]
       },
       config: {
@@ -196,9 +203,49 @@ export const generateCoverLetter = async (
       const result = JSON.parse(response.text);
       return result.coverLetter;
     }
-    throw new Error("No response from AI");
+    throw new Error("No response");
   } catch (error) {
-    console.error("Cover Letter Generation Error:", error);
-    return "Dear Hiring Manager,\n\nI am writing to express my interest in this position. Please find my resume attached.\n\nSincerely,\nCandidate";
+    console.error("Cover Letter Error:", error);
+    return "Error generating cover letter.";
+  }
+};
+
+// --- New Feature: Networking Assistant ---
+
+const networkingSchema: Schema = {
+  type: Type.OBJECT,
+  properties: {
+    message: { type: Type.STRING },
+    subjectLine: { type: Type.STRING }
+  },
+  required: ["message"]
+};
+
+export const generateNetworkingMessage = async (
+  targetName: string,
+  targetCompany: string,
+  relationshipType: string,
+  purpose: string,
+  userContext: string
+): Promise<{ message: string; subjectLine?: string }> => {
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: {
+        role: "user",
+        parts: [{ text: `Draft a networking message to ${targetName} at ${targetCompany}. Relation: ${relationshipType}. Purpose: ${purpose}. Context: ${userContext}.` }]
+      },
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: networkingSchema,
+      }
+    });
+
+    if (response.text) {
+      return JSON.parse(response.text);
+    }
+    throw new Error("No response");
+  } catch (error) {
+    return { message: "Hi, I'd love to connect." };
   }
 };

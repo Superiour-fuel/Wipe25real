@@ -14,6 +14,15 @@ export interface Education {
   details?: string;
 }
 
+export interface Project {
+  id: string;
+  name: string;
+  description: string;
+  technologies: string[];
+  link?: string;
+  imageUrl?: string;
+}
+
 export interface ResumeData {
   fullName: string;
   title: string;
@@ -23,7 +32,9 @@ export interface ResumeData {
   summary: string;
   experience: Experience[];
   education: Education[];
+  projects?: Project[];
   skills: string[];
+  themeColor?: string;
 }
 
 export interface ChatMessage {

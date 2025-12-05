@@ -1,5 +1,7 @@
 {
-  "name": "ResumeCraft AI",
+  "name": "Talent Bridge",
   "description": "An intelligent split-screen resume builder where an AI assistant chats with you to construct a professional resume in real-time.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "microphone"
+  ]
 }
