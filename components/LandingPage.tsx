@@ -32,9 +32,9 @@ const ShowcaseResume: React.FC<ShowcaseResumeProps> = ({ data, layout, isActive,
   // Base classes for the card
   const cardClasses = `
     w-[360px] h-[580px] bg-white rounded-xl shadow-2xl overflow-hidden cursor-pointer 
-    flex-shrink-0 relative text-gray-800 select-none transition-all duration-700 ease-[cubic-bezier(0.25,0.8,0.25,1)]
-    ${isActive ? 'ring-4 ring-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)]' : ''}
-    ${isSide ? 'shadow-[0_10px_30px_rgba(0,0,0,0.3)]' : ''}
+    flex-shrink-0 relative text-gray-800 select-none transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] transform
+    ${isActive ? 'ring-4 ring-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.5)] hover:scale-[1.03] hover:shadow-[0_30px_70px_rgba(0,0,0,0.6)] z-10' : ''}
+    ${isSide ? 'shadow-[0_10px_30px_rgba(0,0,0,0.3)] hover:scale-[1.02] hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)]' : ''}
   `;
 
   // Font sizing for readable card - Scaled down
@@ -368,7 +368,12 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, demos, onLoadDemo, o
 
             {/* Headline */}
             <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6 leading-[1.05] max-w-4xl mx-auto animate-fade-in-up delay-100">
-                Launch your career at<br className="hidden md:block" />
+                Launch your <span className="relative inline-block text-white">
+                  career
+                  <svg className="absolute w-full h-3 -bottom-1 left-0 text-[#D93058] overflow-visible" viewBox="0 0 100 20" preserveAspectRatio="none">
+                      <path d="M0 10 Q50 20 100 10" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" className="animate-draw-line" />
+                  </svg>
+                </span> at<br className="hidden md:block" />
                 top companies.
             </h1>
 
@@ -710,6 +715,35 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart, demos, onLoadDemo, o
                 </div>
             </div>
         </footer>
+        <style>{`
+          .animate-fade-in-up {
+              animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+              opacity: 0;
+              transform: translateY(20px);
+          }
+          .animate-gradient-x {
+              background-size: 200% auto;
+              animation: gradientX 3s linear infinite;
+          }
+          .animate-draw-line {
+              stroke-dasharray: 100;
+              stroke-dashoffset: 100;
+              animation: drawLine 2.5s ease-out infinite alternate;
+          }
+          @keyframes drawLine {
+              0% { stroke-dashoffset: 100; }
+              40% { stroke-dashoffset: 0; }
+              100% { stroke-dashoffset: 0; }
+          }
+          @keyframes fadeInUp {
+              to { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes gradientX {
+              0% { background-position: 0% 50%; }
+              50% { background-position: 100% 50%; }
+              100% { background-position: 0% 50%; }
+          }
+        `}</style>
     </div>
   );
 };

@@ -133,6 +133,8 @@ const calculateResumeScore = (data: ResumeData) => {
 const ResumePreview: React.FC<ResumePreviewProps> = ({ data, loading, onUpdate }) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [hoveredSkillIndex, setHoveredSkillIndex] = useState<number | null>(null);
+  
   const hasContent = data.fullName || data.experience.length > 0 || data.education.length > 0;
   const themeColor = data.themeColor || "#374151";
   const { score, checks } = calculateResumeScore(data);
@@ -315,13 +317,26 @@ const ResumePreview: React.FC<ResumePreviewProps> = ({ data, loading, onUpdate }
                   <div className="flex flex-wrap gap-2">
                     {data.skills && data.skills.length > 0 ? (
                         data.skills.map((skill, index) => (
-                        <div key={index} className="bg-gray-100 text-gray-800 rounded text-xs font-medium flex items-center group/skill focus-within:ring-2 focus-within:ring-blue-500/20 transition-all">
+                        <div 
+                            key={index} 
+                            onMouseEnter={() => setHoveredSkillIndex(index)}
+                            onMouseLeave={() => setHoveredSkillIndex(null)}
+                            style={{
+                                backgroundColor: hoveredSkillIndex === index ? `${themeColor}26` : undefined, // ~15% opacity (hex 26)
+                                borderColor: hoveredSkillIndex === index ? themeColor : 'transparent',
+                                color: hoveredSkillIndex === index ? themeColor : undefined
+                            }}
+                            className="bg-gray-100 text-gray-800 rounded text-xs font-medium flex items-center group/skill focus-within:ring-2 focus-within:ring-blue-500/20 transition-all border border-transparent"
+                        >
                              <input 
                                 value={skill}
                                 onChange={(e) => {
                                     const newSkills = [...data.skills];
                                     newSkills[index] = e.target.value;
                                     onUpdate({ ...data, skills: newSkills });
+                                }}
+                                style={{
+                                    color: 'inherit'
                                 }}
                                 className="bg-transparent border-none outline-none w-auto min-w-[60px] max-w-[200px] px-3 py-1.5 text-center placeholder:text-gray-400 placeholder:italic"
                              />

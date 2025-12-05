@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type, Schema } from "@google/genai";
+import { GoogleGenAI, Type, Schema, GenerateContentResponse } from "@google/genai";
 import { ResumeData } from "../types";
 
 // Initialize Gemini Client
@@ -131,7 +131,7 @@ export const processResumeUpdate = async (
   });
 
   try {
-    const response = await withTimeout(ai.models.generateContent({
+    const response = await withTimeout<GenerateContentResponse>(ai.models.generateContent({
       model: "gemini-2.5-flash",
       contents: {
         role: "user",

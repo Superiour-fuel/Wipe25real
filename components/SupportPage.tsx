@@ -48,25 +48,54 @@ const SupportPage: React.FC<SupportPageProps> = ({ onBack }) => {
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl w-full animate-fade-in-up delay-200">
-          {team.map((member, idx) => (
-            <a 
-              key={idx} 
-              href={member.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group bg-[#2E050D] border border-[#852839] p-8 rounded-xl hover:border-[#D93058] transition-all duration-300 hover:transform hover:-translate-y-2 hover:shadow-xl flex flex-col items-center"
-            >
-              <div className="w-20 h-20 bg-[#751A2B] rounded-full mb-6 flex items-center justify-center text-3xl group-hover:bg-[#D93058] transition-colors shadow-lg font-bold">
-                {member.name[0]}
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">{member.name}</h3>
-              <p className="text-[#D93058] text-sm font-medium uppercase tracking-wider mb-6 group-hover:text-white transition-colors">LinkedIn Profile</p>
-              
-              <div className="mt-auto px-6 py-2.5 rounded-full border border-white/20 text-sm group-hover:bg-white group-hover:text-[#4A0D18] transition-colors font-semibold">
-                Connect
-              </div>
-            </a>
-          ))}
+          {team.map((member, idx) => {
+            const isTopSupport = member.name === 'Manoj' || member.name === 'Sai';
+            
+            return (
+              <a 
+                key={idx} 
+                href={member.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`group bg-[#2E050D] border p-8 rounded-xl transition-all duration-300 hover:transform hover:-translate-y-2 hover:shadow-xl flex flex-col items-center relative ${
+                    isTopSupport 
+                        ? 'border-[#FFD700] shadow-[0_0_25px_rgba(255,215,0,0.15)] hover:border-[#FDB931]' 
+                        : 'border-[#852839] hover:border-[#D93058]'
+                }`}
+              >
+                {/* Top Support Badge */}
+                {isTopSupport && (
+                    <div className="absolute -top-3 bg-gradient-to-r from-[#FFD700] to-[#FDB931] text-[#4A0D18] text-[10px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full shadow-lg border-2 border-[#4A0D18] z-20">
+                        Top Support
+                    </div>
+                )}
+
+                <div className={`w-20 h-20 rounded-full mb-6 flex items-center justify-center text-3xl transition-colors shadow-lg font-bold ${
+                    isTopSupport 
+                        ? 'bg-[#FFD700] text-[#4A0D18] ring-2 ring-[#FFD700]/50 ring-offset-2 ring-offset-[#2E050D]' 
+                        : 'bg-[#751A2B] group-hover:bg-[#D93058] text-white'
+                }`}>
+                  {member.name[0]}
+                </div>
+                
+                <h3 className="text-xl font-bold text-white mb-2">{member.name}</h3>
+                
+                <p className={`text-sm font-medium uppercase tracking-wider mb-6 transition-colors ${
+                    isTopSupport ? 'text-[#FFD700]' : 'text-[#D93058] group-hover:text-white'
+                }`}>
+                    LinkedIn Profile
+                </p>
+                
+                <div className={`mt-auto px-6 py-2.5 rounded-full border text-sm transition-colors font-semibold ${
+                    isTopSupport
+                        ? 'bg-[#FFD700] text-[#4A0D18] border-[#FFD700] hover:bg-white hover:text-black hover:border-white'
+                        : 'border-white/20 group-hover:bg-white group-hover:text-[#4A0D18]'
+                }`}>
+                  Connect
+                </div>
+              </a>
+            );
+          })}
         </div>
       </div>
       
